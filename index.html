@@ -359,18 +359,29 @@
             errorEl.classList.add('hidden');
 
             if (pass === adminPin) {
+                // Intentar verificar usuario actual directamente si la bandera isAuthReady falló
+                if (!window.isAuthReady && window.auth.currentUser) {
+                    window.isAuthReady = true;
+                }
+
                 if (!window.isAuthReady) {
-                    statusEl.textContent = "Sin conexión. Intentando reconectar...";
+                    statusEl.textContent = "Estableciendo conexión segura...";
                     statusEl.classList.remove('hidden');
                     
                     try {
-                        if(window.signInAnonymously && window.auth) {
-                            await window.signInAnonymously(window.auth);
-                            setTimeout(checkLogin, 1000); // Reintentar entrar
-                            return;
-                        }
+                        // Intentar forzar autenticación
+                        await window.signInAnonymously(window.auth);
+                        // Esperar un momento para asegurar que el objeto user esté listo
+                        setTimeout(() => {
+                            statusEl.classList.add('hidden');
+                            document.getElementById('loginModal').classList.add('hidden');
+                            document.getElementById('adminPanel').classList.remove('translate-y-full');
+                            loadGuests();
+                        }, 1000);
+                        return;
                     } catch (e) {
-                        statusEl.textContent = "Error de red. Verifica tu conexión.";
+                        console.error("Auth Error:", e);
+                        statusEl.innerHTML = "Error de red. <br>1. Verifica tu internet.<br>2. Recarga la página.";
                         return;
                     }
                 }
